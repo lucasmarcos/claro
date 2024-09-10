@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "dependencies": {
+    "esbuild": "^0.23.1",
+    "web-tree-sitter": "^0.23.0"
+  },
+  "scripts": {
+    "watch": "esbuild --watch --external:fs --external:path --sourcemap=inline --bundle src/main.js --outfile=web/js.js"
+  }
+}
