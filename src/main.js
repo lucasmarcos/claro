@@ -28,7 +28,7 @@ bloco seq:
       p4
       bloco par:
         p5
-	p6
+        p6
   p7
 */
 
@@ -54,31 +54,72 @@ const dfs = (node) => {
   }
 };
 
-const process = () => {
-  const tree = [];
+const graph = new Map();
 
-  for (const statement of callStack) {
-    if (statement === "(") {
-      if (tree.length > 0) {
-        tree[tree.length - 1].push([]);
-      } else {
-        tree.push([]);
+const gogo = (last, tree) => {
+  if (tree.type === "seq") {
+    for (let i = 0; i < tree.children.length; i++) {
+      gogo([tree.children[i - 1]], tree.children[i]);
+    }
+  } else if (tree.type === "par") {
+    for (const child of tree.children) {
+      gogo(last, child);
+    }
+  } else if (tree.type === "call") {
+    for (const p of last) {
+      if (!graph.has(p)) {
+        graph.set(p, new Set());
       }
-    } else if (statement === ")") {
-      tree.push([]);
-    } else if (statement === "[") {
-    } else if (statement === "]") {
-    } else {
-      tree[tree.length - 1].push(statement);
+      graph.get(p).add(tree.label);
     }
   }
+};
 
-  console.log(tree);
+const process = () => {
+  let index = 0;
+
+  const parse = () => {
+    if (index >= callStack.length) return;
+
+    if (callStack[index] === "(") {
+      index++;
+      const children = [];
+
+      while (callStack[index] != ")" && index < callStack.length) {
+        const child = parse();
+        if (child) {
+          children.push(child);
+        }
+      }
+
+      index++;
+
+      return { type: "seq", children };
+    } else if (callStack[index] === "[") {
+      index++;
+      const children = [];
+
+      while (callStack[index] != "]" && index < callStack.length) {
+        const child = parse();
+        if (child) {
+          children.push(child);
+        }
+      }
+
+      index++;
+
+      return { type: "par", children };
+    } else {
+      return { type: "call", label: callStack[index++] };
+    }
+
+    return null;
+  };
+
+  gogo([], parse());
 };
 
 const dot = () => {
-  const graph = new Map();
-
   console.log(graph);
 
   let out = "digraph {";
